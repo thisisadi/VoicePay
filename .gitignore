@@ -1,0 +1,9 @@
+# Node modules everywhere
+node_modules/
+
+# package-lock.json anywhere
+**/package-lock.json
+
+# Environment files anywhere
+**/.env
+**/.env.*.local
