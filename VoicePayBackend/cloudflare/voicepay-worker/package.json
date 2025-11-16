@@ -1,0 +1,14 @@
+{
+	"name": "voicepay-worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev"
+	},
+	"devDependencies": {
+		"esbuild": "^0.25.12",
+		"wrangler": "^4.46.0"
+	}
+}

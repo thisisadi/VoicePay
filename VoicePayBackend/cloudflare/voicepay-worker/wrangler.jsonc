@@ -1,0 +1,43 @@
+{
+	"name": "voicepay-worker",
+	"main": "./src/worker.js",
+	"compatibility_date": "2025-11-05",
+	"ai": {
+		"binding": "AI",
+		"remote": true
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "USER_STORE",
+				"class_name": "UserStore"
+			},
+			{
+				"name": "WALLET_DO",
+				"class_name": "WalletDurableObject"
+			}
+		]
+	},
+	"vars": {
+		"BACKEND_URL": "https://5688d6c7a5b5.ngrok-free.app"
+	},
+	"triggers": {
+		"crons": [
+			"*/1 * * * *"
+		]
+	},
+	"kv_namespaces": [
+		{
+			"binding": "SCHEDULE_KV",
+			"id": "a70f2c4e82e248059bf5a3887fde19c9"
+		}
+	],
+	"migrations": [
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [
+				"WalletDurableObject"
+			]
+		}
+	]
+}
