@@ -41,6 +41,103 @@ How data flows (high level)
 4. Cron or scheduled logic in Worker scans `SCHEDULE_KV` and when a schedule is due, the Worker calls the backend `/transactions/process-recurring` using HMAC-signed request headers. Backend validates and executes `pullPayment` on-chain via the executor wallet.
 5. Execution results are logged back into the DO (via `store-transaction`) so the user can view history.
 
+User flow demonstration
+------------------------
+The following screenshots demonstrate the complete user flow, from authentication to transaction execution, and how transactions are reflected across different user accounts.
+
+### Step 1: Wallet Connection & Authentication
+![Wallet Connection](screenshots/01-wallet-connection.png)
+*User connects their MetaMask wallet. The frontend requests a nonce from the backend, which is forwarded to the Cloudflare Worker's Durable Object. The user signs a message with their wallet, and upon verification, receives a JWT token for authenticated requests.*
+
+### Step 2: Dashboard Overview
+![Dashboard](screenshots/02-dashboard.png)
+*After authentication, users see their dashboard with current balance, recent activity, and the voice command interface. The wallet address is displayed in the header (e.g., `0xd27C...893c`).*
+
+### Step 3: Voice Command Input
+![Voice Command](screenshots/03-voice-command.png)
+*Users can initiate payments via voice commands. The microphone button records audio, which is transcribed by ElevenLabs. The transcribed text (e.g., "Send 7 USDC to Pragya for Burger") is then sent to the backend for AI-powered intent parsing.*
+
+### Step 4: Intent Parsing & Transaction Initiation
+![Transaction Pending](screenshots/04-transaction-pending.png)
+*The Cloudflare Worker's AI (Mistral) parses the natural language into structured JSON. The frontend automatically initiates the transaction, showing "Awaiting signature / transaction pending..." while waiting for MetaMask confirmation.*
+
+### Step 5: MetaMask Transaction Confirmation
+![MetaMask Confirmation](screenshots/05-metamask-confirmation.png)
+*MetaMask popup appears for user confirmation. The transaction details show the transfer amount (7 USDC), recipient address, and network fee. Upon confirmation, the transaction is submitted to the blockchain.*
+
+### Step 6: Transaction Confirmation
+![Transaction Confirmed](screenshots/06-transaction-confirmed.png)
+*After blockchain confirmation, the transaction status updates to "Transaction confirmed!" The transaction is automatically logged in the user's Durable Object for future reference.*
+
+### Step 7: Activity Log - Sender's View
+![Activity Log - Sender](screenshots/07-activity-log-sender.png)
+*The sender can view all their transactions in the Activity Log. Each transaction shows:*
+- *Date and time*
+- *Amount (negative for outgoing)*
+- *Type (Sent or Recurring)*
+- *Recipient name*
+- *Note/description*
+- *Status (Completed)*
+
+*In this example, the sender (`0xd27C...893c`) can see:*
+- *"Paid Pragya 7 USDC" (Just now) - Burger payment*
+- *"Paid Pragya 1000 USDC" (30 mins ago) - Recurring rent payment*
+- *"Paid Aditya Jha 1 USDC" (31 mins ago) - Pizza payment*
+
+### Step 8: Cross-User Transaction Reflection - Recipient's View
+![Dashboard - Recipient View Before](screenshots/08-dashboard-recipient0.png)
+*When the recipient (Pragya) first logs in with their wallet (`0x28Fe...3f20`), they see their original balance i.e. 22.73 USDC.*
+![Dashboard - Recipient View After](screenshots/08-dashboard-recipient.png)
+*When the recipient (Pragya) logs in with their wallet (`0x28Fe...3f20`), they see their updated balance reflecting the received payments. The balance increases from the previous amount to show the incoming transfers.*
+
+**Key Point:** Since all transactions are executed on-chain via the smart contract, the recipient's wallet balance automatically reflects incoming payments. The Durable Object system ensures that:
+1. **On-chain state is the source of truth** - The recipient's USDC balance on the blockchain is updated immediately upon transaction confirmation
+2. **Per-user transaction history** - Each user's Durable Object stores their own transaction history (sent/received), but the actual token balance comes from the blockchain
+3. **Real-time balance updates** - The frontend uses `wagmi` to read the current USDC balance directly from the ERC20 contract, so recipients see updated balances immediately
+
+### Step 9: Managing Recipients
+![Manage Recipients](screenshots/09-manage-recipients.png)
+*Users can manage their saved payees. The system stores recipient names mapped to wallet addresses in the user's Durable Object, allowing voice commands to use names instead of addresses (e.g., "Send $50 to John" instead of "Send $50 to 0x...").*
+
+### Step 10: Adding/Editing Recipients
+![Add Payee Modal](screenshots/10-add-payee-modal.png)
+*Users can add new recipients with a name and wallet address. This data is stored in the Cloudflare Worker's Durable Object, enabling natural language recipient resolution during voice command parsing.*
+
+### Step 11: Recurring Payment Setup
+![Recurring Payment](screenshots/11-recurring-payment.png)
+*For recurring payments, users approve the contract to spend tokens once. The schedule is stored in the Durable Object and indexed in KV storage. The Worker's cron job automatically executes payments at the specified intervals.*
+
+### Technical Flow Summary
+```
+User A (Sender)                    Blockchain                    User B (Recipient)
+     |                                  |                              |
+     |-- Voice: "Send 7 USDC to B ---->|                              |
+     |                                  |                              |
+     |-- Parse Intent (AI) ----------->|                              |
+     |                                  |                              |
+     |-- Approve & Sign -------------->|                              |
+     |                                  |                              |
+     |-- Execute Transfer ------------>|-- USDC Transfer ----------->|
+     |                                  |                              |
+     |-- Log in DO ------------------->|                              |
+     |                                  |                              |
+     |                                  |                              |
+     |                                  |<-- Balance Updated ----------|
+     |                                  |                              |
+     |                                  |                              |
+     |                                  |-- User B logs in ------------>|
+     |                                  |                              |
+     |                                  |-- Read balance from chain --->|
+     |                                  |                              |
+     |                                  |-- Updated balance shown ----->|
+```
+
+**Important Notes:**
+- **On-chain execution**: All payments are executed on the blockchain, making them immediately visible to recipients
+- **Durable Objects**: Store per-user transaction history and recipient mappings, but do not hold actual token balances
+- **Balance reading**: The frontend reads USDC balances directly from the ERC20 contract using `wagmi` and `viem`, ensuring real-time accuracy
+- **Transaction history**: Each user's Durable Object maintains their own transaction log, but the blockchain is the authoritative source for token balances
+
 
 Running the project (local dev)
 --------------------------------
