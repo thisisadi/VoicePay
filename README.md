@@ -1,5 +1,7 @@
 # VoicePay
 
+🎥 **[Watch Demo Video](https://drive.google.com/file/d/1N7ilgQXNzn00AOtXfptLaj-XsmVC52SG/view?usp=sharing)**
+
 Short overview
 --------------
 VoicePay is a voice-enabled, web3-first payments app that lets users create one-time and recurring on-chain payments via a friendly Next.js frontend and a Node/Express backend. The system uses a Cloudflare Worker (with Durable Objects and KV) as the scheduling and state layer for recipients, schedules, and transactions, and an Ethereum smart contract for recurring pull payments.
@@ -62,7 +64,6 @@ The following screenshots demonstrate the complete user flow, from authenticatio
 *The Cloudflare Worker's AI (Mistral) parses the natural language into structured JSON. The frontend automatically initiates the transaction, showing "Awaiting signature / transaction pending..." while waiting for MetaMask confirmation.*
 
 ### Step 5: MetaMask Transaction Confirmation
-![MetaMask Confirmation](screenshots/05-metamask-confirmation.png)
 *MetaMask popup appears for user confirmation. The transaction details show the transfer amount (7 USDC), recipient address, and network fee. Upon confirmation, the transaction is submitted to the blockchain.*
 
 ### Step 6: Transaction Confirmation
